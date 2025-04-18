@@ -1,0 +1,66 @@
+@value grey: #CCC;
+@value greyLight: rgba(255, 255, 255, 0.4);
+@value greyDim: #686868;
+
+.zone {
+  align-items: center;
+  border: 2px dashed grey;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  padding: 20px;
+}
+
+.file {
+  background: linear-gradient(to bottom, #EEE, #DDD);
+}
+
+.info {
+  align-items: center;
+}
+
+.size {
+  background-color: greyLight;
+}
+
+.name {
+  background-color: greyLight;
+}
+
+.progressBar {
+  bottom: 14px;
+  position: absolute;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.remove {
+  border-radius: 0;
+  padding: 0 20px;
+}
+
+.csvReader {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 30px;
+}
+
+.browseFile {
+  width: 25%;
+}
+
+.acceptedFile {
+  border: 1px solid greyDim;
+  height: auto;
+  line-height: 0.5;
+  padding-left: 10px;
+  width: 75%;
+  justify-content: center;
+}
+
+.convertButtons {
+  display: flex;
+  flex-direction: row;
+}

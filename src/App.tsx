@@ -1,8 +1,11 @@
-import { ChangeEvent, useCallback, useState } from 'react'
+import { ChangeEvent, ReactNode, RefObject, useCallback, useRef, useState } from 'react'
 import Papa, { ParseResult } from 'papaparse';
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { Uploader } from './uploader/Uploader';
+import styles from './App.module.css'
+import { formatFileSize } from 'react-papaparse';
 
 const archidektFileHeaders = 'Quantity,Card Name,Set Name,Set Code,Printing,Card Num\n';
 
@@ -35,6 +38,8 @@ function App() {
   const [archidektParsed, setArchidektParsed] = useState<ArchidektList[] | null>(null);
   const [folderName, setFolderName] = useState<string>('');
   const [dragonShieldJSON, setDragonShieldJSON] = useState<DragonShieldCard[] | null>(null);
+
+  const inputRef: RefObject<HTMLElement | null> = useRef<HTMLElement>(null);
 
   const handleSelectedFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -103,19 +108,23 @@ function App() {
     document.body.removeChild(link);
   }, [dragonShieldJSON]);
 
+  const handleBrowseClick = () => {
+    inputRef?.current?.click();
+  }
+
   return (
     <>
-      <div>
-        <input id='csvFile' type='file' onChange={handleSelectedFile}/>
+      <div id='uploader'>
+        <Uploader />
       </div>
-      <div>
-        <button onClick={handleParse}>Parse File</button>
-      </div>
-      {selectedFile && (
-        <div>
-          <p>Filename: {selectedFile.name}</p>
+      <div id='homemade_uploader' className={styles.csvReader}>
+        <button type='button' onClick={handleBrowseClick} className={styles.browseFile}>Browse File</button>
+        <div className={styles.acceptedFile}>
+          {selectedFile && (<p>{selectedFile.name + ' | ' + formatFileSize(selectedFile.size)}</p>)}
         </div>
-      )}
+        <button className={styles.browseFile} onClick={handleParse}>Parse File</button>
+        <input ref={inputRef} id='csvFile' type='file' style={{ display: 'none' }} onChange={handleSelectedFile}/>
+      </div>
       {archidektParsed && (
         <div>
           <label>File parsed!</label>
@@ -127,9 +136,9 @@ function App() {
           <input type='text' id='folderName' placeholder='Folder Name' value={folderName} onChange={handleFolderNameBlur} />
         </div>
       )}
-      <div>
-        <button onClick={handleConvertToDS} disabled={!folderName}>Convert to Dragon Shield</button>
-        <button onClick={handleDownloadFile} disabled={!dragonShieldJSON && !folderName}>Download Dragonshield Import CSV</button>
+      <div className={styles.convertButtons}>
+        <button onClick={handleConvertToDS} disabled={!folderName}>Convert to Dragon Shield Inventory</button>
+        <button onClick={handleDownloadFile} disabled={!dragonShieldJSON && !folderName}>Download Dragonshield Inventory Import CSV</button>
       </div>
       <div>
       {dragonShieldJSON && (

@@ -1,163 +1,336 @@
-import { ChangeEvent, ReactNode, RefObject, useCallback, useRef, useState } from 'react'
+import {
+	ChangeEvent,
+	ReactNode,
+	RefObject,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from 'react';
 import Papa, { ParseResult } from 'papaparse';
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import './App.css';
 import { Uploader } from './uploader/Uploader';
-import styles from './App.module.css'
+import styles from './App.module.css';
 import { formatFileSize } from 'react-papaparse';
 
-const archidektFileHeaders = 'Quantity,Card Name,Set Name,Set Code,Printing,Card Num\n';
+const archidektFileHeaders =
+	'Quantity,Card Name,Edition Name,Edition Code,Modifier,Collector Number\n';
+
+const archidektDeckFileHeaders =
+	'Quantity,Card Name,Edition Name,Edition Code,Category,Secondary Categories,Label,Modifier,Collector Number,Salt,Color,CMC,Rarity,Price,Collection Status\n';
+
+enum CollectionStatus {
+	NOT_OWNED = 'Not Owned',
+	OWN_DIFFERENT_EDITION = 'Own Different Edition',
+	OWN_EXACT_EDITION = 'Own Exact Edition',
+}
 
 type ArchidektList = {
-  'Quantity': string;
-  'Card Name': string;
-  'Set Name': string;
-  'Set Code': string;
-  'Printing': string;
-  'Card Num': string;
+	Quantity: string;
+	'Card Name': string;
+	'Edition Name': string;
+	'Edition Code': string;
+	Modifier: string;
+	'Collector Number': string;
+};
+
+type ArchidektDeckListHeaders = {
+	Quantity: string;
+	'Card Name': string;
+	'Edition Name': string;
+	'Edition Code': string;
+	Category: string;
+	'Secondary Categories': string;
+	Label: string;
+	Modifier: string;
+	'Collector Number': string;
+	Salt: string;
+	Color: string;
+	CMC: string;
+	Rarity: string;
+	Price: string;
+	'Collection Status': CollectionStatus;
 };
 
 type DragonShieldCard = {
-  'Folder Name': string;
-  'Quantity': string;
-  'Trade Quantity': string;
-  'Card Name': string;
-  'Set Code': string;
-  'Set Name': string;
-  'Card Number': string;
-  'Condition': string;
-  'Printing': string;
-  'Language': string;
-  'Price Bought': string;
-  'Date Bought': string;
-}
+	'Folder Name': string;
+	Quantity: string;
+	'Trade Quantity': string;
+	'Card Name': string;
+	'Set Code': string;
+	'Set Name': string;
+	'Card Number': string;
+	Condition: string;
+	Printing: string;
+	Language: string;
+	'Price Bought': string;
+	'Date Bought': string;
+};
 
 function App() {
-  const [selectedFile, setSelectedFile] = useState<File | null>();
-  const [archidektParsed, setArchidektParsed] = useState<ArchidektList[] | null>(null);
-  const [folderName, setFolderName] = useState<string>('');
-  const [dragonShieldJSON, setDragonShieldJSON] = useState<DragonShieldCard[] | null>(null);
+	const [selectedFile, setSelectedFile] = useState<File | null>();
+	const [archidektParsed, setArchidektParsed] = useState<
+		ArchidektList[] | null
+	>(null);
+	const [archidektDeckParsed, setArchidektDeckParsed] = useState<
+		ArchidektDeckListHeaders[] | null
+	>(null);
+	const [folderName, setFolderName] = useState<string>('');
+	const [dragonShieldJSON, setDragonShieldJSON] = useState<
+		DragonShieldCard[] | null
+	>(null);
+	const [dragonShieldDeckJSON, setDragonShieldDeckJSON] = useState<
+		ArchidektDeckListHeaders[] | null
+	>(null);
 
-  const inputRef: RefObject<HTMLElement | null> = useRef<HTMLElement>(null);
+	useEffect(() => {
+		setArchidektDeckParsed(null);
+		setArchidektParsed(null);
+		setDragonShieldJSON(null);
+		setDragonShieldDeckJSON(null);
+		setFolderName('');
+	}, [selectedFile]);
 
-  const handleSelectedFile = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    setSelectedFile(file);
-  };
+	const inputRef: RefObject<HTMLInputElement | null> =
+		useRef<HTMLInputElement>(null);
 
-  const handleParse = useCallback(() => {
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      const fileContent = e?.target?.result;
-      const csvWithHeaders = archidektFileHeaders + fileContent;
+	const handleSelectedFile = (event: ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		setSelectedFile(file);
+	};
 
-      Papa.parse(csvWithHeaders, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results: ParseResult<ArchidektList>) => {
-          console.log(results)
-          setArchidektParsed(results.data);
-        },
-      });
-      console.log('finished parsing');
+	const handleParse = useCallback(() => {
+		const reader = new FileReader();
+		reader.onload = (e: ProgressEvent<FileReader>) => {
+			const fileContent = e?.target?.result;
+			const csvWithHeaders = archidektFileHeaders + fileContent;
 
-    };
-    if (selectedFile) {
-      reader.readAsText(selectedFile);
-    }
-  }, [selectedFile]);
+			Papa.parse(csvWithHeaders, {
+				header: true,
+				skipEmptyLines: true,
+				complete: (results: ParseResult<ArchidektList>) => {
+					console.log(results);
+					setArchidektParsed(results.data);
+				},
+			});
+			console.log('finished parsing for collection');
+		};
+		if (selectedFile) {
+			reader.readAsText(selectedFile);
+		}
+	}, [selectedFile]);
 
-  const handleFolderNameBlur = (event: ChangeEvent<HTMLInputElement>) => {
-    setFolderName(event.target.value);
-  };
+	const handleDeckParse = useCallback(() => {
+		const reader = new FileReader();
+		reader.onload = (e: ProgressEvent<FileReader>) => {
+			const fileContent = e?.target?.result;
+			const csvWithHeaders = archidektDeckFileHeaders + fileContent;
 
-  const handleConvertToDS = async () => {
-    const newDragonShieldList = archidektParsed?.map((card: ArchidektList) => {
-      return {
-        'Folder Name': folderName!,
-        'Quantity': card.Quantity,
-        'Trade Quantity': '0',
-        'Card Name': card['Card Name'],
-        'Set Code': card['Set Code'],
-        'Set Name': card['Set Name'],
-        'Card Number': card['Card Num'],
-        'Condition': 'NearMint',
-        'Printing': card.Printing === 'Etched' ? 'Foil' : card.Printing,
-        'Language': 'English',
-        'Price Bought': '0',
-        'Date Bought': '6/25/2022'
-      };
-    });
-    setDragonShieldJSON(newDragonShieldList!);
-  };
+			Papa.parse(csvWithHeaders, {
+				header: true,
+				skipEmptyLines: true,
+				complete: (results: ParseResult<ArchidektDeckListHeaders>) => {
+					console.log(results);
+					setArchidektDeckParsed(results.data);
+				},
+			});
+			console.log('finished parsing for deck list');
+		};
+		if (selectedFile) {
+			reader.readAsText(selectedFile);
+		}
+	}, [selectedFile]);
 
-  const handleDownloadFile = useCallback(() => {
-    const csv = Papa.unparse(dragonShieldJSON!);
+	const handleFolderNameBlur = (event: ChangeEvent<HTMLInputElement>) => {
+		setFolderName(event.target.value);
+	};
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+	const handleConvertToDSInventory = async () => {
+		const newDragonShieldList = archidektParsed?.map((card: ArchidektList) => {
+			return {
+				'Folder Name': folderName!,
+				Quantity: card.Quantity,
+				'Trade Quantity': '0',
+				'Card Name': card['Card Name'],
+				'Set Code': card['Edition Code'],
+				'Set Name': card['Edition Name'],
+				'Card Number': card['Collector Number'],
+				Condition: 'NearMint',
+				Printing: card.Modifier === 'Etched' ? 'Foil' : card.Modifier,
+				Language: 'English',
+				'Price Bought': '0',
+				'Date Bought': new Date().toISOString().split('T')[0],
+			};
+		});
+		setDragonShieldJSON(newDragonShieldList ?? null);
+		setDragonShieldDeckJSON(null);
+	};
 
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.download = `${folderName}.csv`;
-    document.body.appendChild(link);
-    link.click();
+	const handleDownloadInventoryFile = useCallback(() => {
+		const csv = Papa.unparse(dragonShieldJSON!);
 
-    URL.revokeObjectURL(url);
-    document.body.removeChild(link);
-  }, [dragonShieldJSON]);
+		const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 
-  const handleBrowseClick = () => {
-    inputRef?.current?.click();
-  }
+		const link = document.createElement('a');
+		const url = URL.createObjectURL(blob);
+		link.href = url;
+		link.download = `${folderName}.csv`;
+		document.body.appendChild(link);
+		link.click();
 
-  return (
-    <>
-      <div id='uploader'>
-        <Uploader />
-      </div>
-      <div id='homemade_uploader' className={styles.csvReader}>
-        <button type='button' onClick={handleBrowseClick} className={styles.browseFile}>Browse File</button>
-        <div className={styles.acceptedFile}>
-          {selectedFile && (<p>{selectedFile.name + ' | ' + formatFileSize(selectedFile.size)}</p>)}
-        </div>
-        <button className={styles.browseFile} onClick={handleParse}>Parse File</button>
-        <input ref={inputRef} id='csvFile' type='file' style={{ display: 'none' }} onChange={handleSelectedFile}/>
-      </div>
-      {archidektParsed && (
-        <div>
-          <label>File parsed!</label>
-        </div>
-      )}
-      {archidektParsed && (
-        <div>
-          <label htmlFor='folderName'>Folder Name</label>
-          <input type='text' id='folderName' placeholder='Folder Name' value={folderName} onChange={handleFolderNameBlur} />
-        </div>
-      )}
-      <div className={styles.convertButtons}>
-        <button onClick={handleConvertToDS} disabled={!folderName}>Convert to Dragon Shield Inventory</button>
-        <button onClick={handleDownloadFile} disabled={!dragonShieldJSON && !folderName}>Download Dragonshield Inventory Import CSV</button>
-      </div>
-      <div>
-      {dragonShieldJSON && (
-        <code>
-          {JSON.stringify(dragonShieldJSON)}
-        </code>
-      )}
-      </div>
-      <div>
-        <a href='https://vite.dev' target='_blank'>
-          <img src={viteLogo} className='logo' alt='Vite logo' />
-        </a>
-        <a href='https://react.dev' target='_blank'>
-          <img src={reactLogo} className='logo react' alt='React logo' />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-    </>
-  )
+		URL.revokeObjectURL(url);
+		document.body.removeChild(link);
+	}, [dragonShieldJSON, folderName]);
+
+	const handleConvertToDSDeckList = async () => {
+		const newDragonShieldDeckList = archidektDeckParsed?.map(
+			(card: ArchidektDeckListHeaders) => {
+				return {
+					Quantity: card.Quantity,
+					'Card Name': card['Card Name'],
+					'Edition Name': card['Edition Name'],
+					'Edition Code': card['Edition Code'],
+					Category: card.Category,
+					'Secondary Categories': card['Secondary Categories'],
+					Label: card.Label,
+					Modifier: card.Modifier,
+					'Collector Number': card['Collector Number'],
+					Salt: card.Salt,
+					Color: card.Color,
+					CMC: card.CMC,
+					Rarity: card.Rarity,
+					Price: card.Price,
+					'Collection Status': CollectionStatus.OWN_EXACT_EDITION,
+				};
+			}
+		);
+		setDragonShieldDeckJSON(newDragonShieldDeckList ?? null);
+		setDragonShieldJSON(null);
+	};
+
+	const handleDownloadDeckListFile = useCallback(() => {
+		const csv = Papa.unparse(dragonShieldDeckJSON!, { header: false });
+
+		const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+		const link = document.createElement('a');
+		const url = URL.createObjectURL(blob);
+		link.href = url;
+		link.download = `${
+			selectedFile?.name.split('(')[0].trim().split('.')[0]
+		}_decklist.csv`;
+		document.body.appendChild(link);
+		link.click();
+
+		URL.revokeObjectURL(url);
+		document.body.removeChild(link);
+	}, [dragonShieldDeckJSON, selectedFile]);
+
+	const handleBrowseClick = () => {
+		inputRef?.current?.click();
+	};
+
+	return (
+		<>
+			<div>
+				<a href='https://vite.dev' target='_blank'>
+					<img src={viteLogo} className='logo' alt='Vite logo' />
+				</a>
+				<a href='https://react.dev' target='_blank'>
+					<img src={reactLogo} className='logo react' alt='React logo' />
+				</a>
+			</div>
+			<div id='uploader'>
+				<Uploader />
+			</div>
+			<div id='homemade_uploader' className={styles.csvReader}>
+				<button
+					type='button'
+					onClick={handleBrowseClick}
+					className={styles.browseFile}
+				>
+					Browse File
+				</button>
+				<div className={styles.acceptedFile}>
+					{selectedFile && (
+						<p>
+							{selectedFile.name + ' | ' + formatFileSize(selectedFile.size)}
+						</p>
+					)}
+				</div>
+				<button className={styles.browseFile} onClick={handleParse}>
+					Parse File for Collection
+				</button>
+				<button className={styles.browseFile} onClick={handleDeckParse}>
+					Parse File for Deck List
+				</button>
+				<input
+					ref={inputRef}
+					id='csvFile'
+					type='file'
+					style={{ display: 'none' }}
+					onChange={handleSelectedFile}
+				/>
+			</div>
+			{archidektParsed && (
+				<div>
+					<label>Inventory file parsed!</label>
+				</div>
+			)}
+			{archidektParsed && (
+				<div>
+					<label htmlFor='folderName'>Folder Name</label>
+					<input
+						type='text'
+						id='folderName'
+						placeholder='Folder Name'
+						value={folderName}
+						onChange={handleFolderNameBlur}
+					/>
+				</div>
+			)}
+			{archidektDeckParsed && (
+				<div>
+					<label>Deck list file parsed!</label>
+				</div>
+			)}
+			<div className={styles.convertButtons}>
+				<button onClick={handleConvertToDSInventory} disabled={!folderName}>
+					Convert to Dragon Shield Inventory
+				</button>
+				<button
+					onClick={handleDownloadInventoryFile}
+					disabled={!dragonShieldJSON && !folderName}
+				>
+					Download Dragonshield Inventory Import CSV
+				</button>
+			</div>
+			<div className={styles.convertButtons}>
+				<button
+					onClick={handleConvertToDSDeckList}
+					disabled={!archidektDeckParsed}
+				>
+					Convert to DragonShield Deck List
+				</button>
+				<button
+					onClick={handleDownloadDeckListFile}
+					disabled={!dragonShieldDeckJSON}
+				>
+					Download DragonShield Deck List CSV
+				</button>
+			</div>
+			<div>
+				{dragonShieldJSON && <code>{JSON.stringify(dragonShieldJSON)}</code>}
+			</div>
+			<div>
+				{dragonShieldDeckJSON && (
+					<code>{JSON.stringify(dragonShieldDeckJSON)}</code>
+				)}
+			</div>
+		</>
+	);
 }
 
-export default App
+export default App;

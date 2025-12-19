@@ -1,6 +1,5 @@
 import {
 	ChangeEvent,
-	ReactNode,
 	RefObject,
 	useCallback,
 	useEffect,
@@ -14,6 +13,7 @@ import './App.css';
 import { Uploader } from './uploader/Uploader';
 import styles from './App.module.css';
 import { formatFileSize } from 'react-papaparse';
+import CardTableParsed from './CardTable/CardTablePArsed';
 
 const archidektFileHeaders =
 	'Quantity,Card Name,Edition Name,Edition Code,Modifier,Collector Number\n';
@@ -27,7 +27,7 @@ enum CollectionStatus {
 	OWN_EXACT_EDITION = 'Own Exact Edition',
 }
 
-type ArchidektList = {
+export type ArchidektList = {
 	Quantity: string;
 	'Card Name': string;
 	'Edition Name': string;
@@ -36,7 +36,7 @@ type ArchidektList = {
 	'Collector Number': string;
 };
 
-type ArchidektDeckListHeaders = {
+export type ArchidektDeckListHeaders = {
 	Quantity: string;
 	'Card Name': string;
 	'Edition Name': string;
@@ -54,7 +54,7 @@ type ArchidektDeckListHeaders = {
 	'Collection Status': CollectionStatus;
 };
 
-type DragonShieldCard = {
+export type DragonShieldCard = {
 	'Folder Name': string;
 	Quantity: string;
 	'Trade Quantity': string;
@@ -322,11 +322,19 @@ function App() {
 				</button>
 			</div>
 			<div>
-				{dragonShieldJSON && <code>{JSON.stringify(dragonShieldJSON)}</code>}
+				{dragonShieldJSON && (
+					<CardTableParsed
+						headers={Object.keys(dragonShieldJSON[0])}
+						cards={dragonShieldJSON}
+					/>
+				)}
 			</div>
 			<div>
 				{dragonShieldDeckJSON && (
-					<code>{JSON.stringify(dragonShieldDeckJSON)}</code>
+					<CardTableParsed
+						headers={Object.keys(dragonShieldDeckJSON[0])}
+						cards={dragonShieldDeckJSON}
+					/>
 				)}
 			</div>
 		</>
